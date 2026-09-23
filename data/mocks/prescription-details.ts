@@ -1,0 +1,40 @@
+import type { PrescriptionDetail } from "@/types/models";
+
+export const mockPrescriptionDetails: PrescriptionDetail[] = [
+  {
+    Uuid: "b2ce8380-b129-4179-aa12-42cc40e11101",
+    PrescriptionUuid: "35d9b2da-a13d-4d6f-a4d5-a13aa4051101",
+    MedicineUuid: "a951d152-7aea-4be8-b525-c38142331101",
+    Quantity: 12,
+    QuantityPerDose: 1,
+    DosesPerDay: 2,
+    Duration: 6,
+    Price: 1200,
+    IsExternal: false,
+    Note: "Uống sau ăn sáng và tối.",
+  },
+  {
+    Uuid: "b2ce8380-b129-4179-aa12-42cc40e11102",
+    PrescriptionUuid: "35d9b2da-a13d-4d6f-a4d5-a13aa4051101",
+    MedicineUuid: "a951d152-7aea-4be8-b525-c38142331102",
+    Quantity: 6,
+    QuantityPerDose: 1,
+    DosesPerDay: 1,
+    Duration: 6,
+    Price: 1800,
+    IsExternal: false,
+    Note: "Uống sau bữa sáng.",
+  },
+  {
+    Uuid: "b2ce8380-b129-4179-aa12-42cc40e11103",
+    PrescriptionUuid: "35d9b2da-a13d-4d6f-a4d5-a13aa4051102",
+    MedicineUuid: "a951d152-7aea-4be8-b525-c38142331103",
+    Quantity: 1,
+    QuantityPerDose: 1,
+    DosesPerDay: 2,
+    Duration: 7,
+    Price: 45000,
+    IsExternal: true,
+    Note: "Súc họng, không được uống. Mua tại nhà thuốc bên ngoài.",
+  },
+];
