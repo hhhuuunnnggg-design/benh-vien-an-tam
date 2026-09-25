@@ -4,6 +4,7 @@ export const mockHospitals: Hospital[] = [
   {
     Uuid: "a4a0a61f-577d-48cb-94b9-c9ce85554b11",
     Image: "/images/hospital-placeholder.svg",
+    LImage: "/images/hospital-campus-placeholder.svg",
     MapUrl: "https://www.google.com/maps?q=52%20Nguyen%20Van%20Troi%20Phu%20Nhuan%20Ho%20Chi%20Minh&output=embed",
     Slug: "benh-vien-an-binh",
     Name: "Bệnh viện An Bình",
@@ -22,6 +23,7 @@ export const mockHospitals: Hospital[] = [
   {
     Uuid: "f02f7063-adc4-47ae-9a42-02ca5adff369",
     Image: "/images/hospital-placeholder.svg",
+    LImage: "/images/hospital-campus-placeholder.svg",
     MapUrl: "https://www.google.com/maps?q=18%20Le%20Dai%20Hanh%20Hai%20Ba%20Trung%20Ha%20Noi&output=embed",
     Slug: "phong-kham-minh-tam",
     Name: "Phòng khám Minh Tâm",
@@ -40,6 +42,7 @@ export const mockHospitals: Hospital[] = [
   {
     Uuid: "3ab3cdb8-606a-4718-9ed7-a8d7a781d4f7",
     Image: "/images/hospital-placeholder.svg",
+    LImage: "/images/hospital-campus-placeholder.svg",
     MapUrl: "https://www.google.com/maps?q=126%20Nguyen%20Van%20Linh%20Hai%20Chau%20Da%20Nang&output=embed",
     Slug: "trung-tam-y-khoa-song-han",
     Name: "Trung tâm Y khoa Sông Hàn",
@@ -58,6 +61,7 @@ export const mockHospitals: Hospital[] = [
   {
     Uuid: "c750f76e-a4cd-46ec-bb08-1c58ab73c901",
     Image: "/images/hospital-placeholder.svg",
+    LImage: "/images/hospital-campus-placeholder.svg",
     MapUrl: "https://www.google.com/maps?q=74%20Tran%20Phu%20Nha%20Trang%20Khanh%20Hoa&output=embed",
     Slug: "phong-kham-da-khoa-hai-au",
     Name: "Phòng khám Đa khoa Hải Âu",
@@ -76,6 +80,7 @@ export const mockHospitals: Hospital[] = [
   {
     Uuid: "2d76b699-c01b-41a2-8ccc-a39261eb8d02",
     Image: "/images/hospital-placeholder.svg",
+    LImage: "/images/hospital-campus-placeholder.svg",
     MapUrl: "https://www.google.com/maps?q=35%20Vo%20Thi%20Sau%20Ninh%20Kieu%20Can%20Tho&output=embed",
     Slug: "trung-tam-cham-soc-gia-dinh",
     Name: "Trung tâm Chăm sóc Gia đình",
@@ -94,6 +99,7 @@ export const mockHospitals: Hospital[] = [
   {
     Uuid: "6167cb3b-e89b-4d49-8f03-99cc86f1ed03",
     Image: "/images/hospital-placeholder.svg",
+    LImage: "/images/hospital-campus-placeholder.svg",
     MapUrl: "https://www.google.com/maps?q=10%20Duong%20Mau%20Ho%20Chi%20Minh&output=embed",
     Slug: "co-so-y-te-tam-ngung",
     Name: "Cơ sở Y tế Tạm ngưng",

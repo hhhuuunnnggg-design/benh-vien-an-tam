@@ -1,12 +1,10 @@
 import type AxiosMockAdapter from "axios-mock-adapter";
 
 import { mockAccounts } from "@/data/mocks/accounts";
-import { mockDoctorAppointments } from "@/data/mocks/doctor-appointments";
+import { mockAppointments } from "@/data/mocks/appointments";
 import { mockDoctors } from "@/data/mocks/doctors";
-import { mockHospitalAppointments } from "@/data/mocks/hospital-appointments";
 import { mockHospitalMedicalServices } from "@/data/mocks/hospital-medical-services";
 import { mockHospitals } from "@/data/mocks/hospitals";
-import { mockMedicalServiceAppointments } from "@/data/mocks/medical-service-appointments";
 import { mockMedicalServices } from "@/data/mocks/medical-services";
 import { mockPatientProfiles } from "@/data/mocks/patient-profiles";
 import { mockRooms } from "@/data/mocks/rooms";
@@ -23,7 +21,7 @@ import {
 } from "@/lib/booking/working-hours";
 import { getStringParam } from "@/lib/mocks/query-utils";
 import type {
-  Appointment,
+  Appointment as AppointmentView,
   AppointmentPresentation,
   BookingType,
   CancelAppointmentRequest,
@@ -32,14 +30,15 @@ import type {
 } from "@/types/appointments";
 import {
   AppointmentStatus,
+  AppointmentType,
   BaseStatus,
   Gender,
   Role,
   RoomStatus,
+  type Appointment,
   type DoctorProfile,
   type Hospital,
   type MedicalService,
-  type Room,
 } from "@/types/models";
 
 const rescheduledAppointmentUuids = new Set<string>();
@@ -120,9 +119,14 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
     const authenticatedAccountUuid = getAuthenticatedAccountUuid(config.headers);
     const date = getStringParam(config.params, "date");
     const resolved = resolveBooking(type, targetUuid, hospitalUuid);
+    const patient = getPatientByAccountUuid(accountUuid);
 
     if (!resolved) return invalidBranchResponse();
-    if (!authenticatedAccountUuid || accountUuid !== authenticatedAccountUuid) {
+    if (
+      !authenticatedAccountUuid ||
+      accountUuid !== authenticatedAccountUuid ||
+      !patient
+    ) {
       return unauthorizedResponse();
     }
     if (!isValidDateString(date) || date < getVietnamToday()) {
@@ -136,7 +140,7 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
         Time: time,
         IsAvailable:
           appointmentAt.getTime() > Date.now() &&
-          canBook(resolved, appointmentAt, accountUuid),
+          canBook(resolved, appointmentAt, patient.Uuid),
       };
     });
 
@@ -189,6 +193,8 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
 
       const identityError = validatePatient(request);
       if (identityError) return identityError;
+      const patient = getPatientByAccountUuid(request.AccountUuid);
+      if (!patient) return unauthorizedResponse();
 
       const appointmentAt = new Date(request.AppointmentAt);
       if (
@@ -213,18 +219,7 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
           ),
         ];
       }
-      if (!canBook(resolved, appointmentAt, request.AccountUuid)) {
-        return [
-          409,
-          errorBody(
-            "SLOT_CONFLICT",
-            "Thời gian này vừa không còn khả dụng. Vui lòng chọn thời gian khác.",
-          ),
-        ];
-      }
-
-      const room = findAvailableRoom(resolved.Hospital.Uuid, appointmentAt);
-      if (!room) {
+      if (!canBook(resolved, appointmentAt, patient.Uuid)) {
         return [
           409,
           errorBody(
@@ -238,35 +233,47 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
       const common = {
         Uuid: crypto.randomUUID(),
         PatientName: request.PatientName.trim(),
-        Gender: request.Gender,
+        Gender: request.Gender as Gender,
         Note: request.Note.trim(),
         MedicalCode: request.MedicalCode,
-        AppointmentAt: appointmentAt,
+        StartTime: appointmentAt,
         Status: AppointmentStatus.Pending,
-        AccountUuid: request.AccountUuid,
+        PatientUuid: patient.Uuid,
         HospitalUuid: resolved.Hospital.Uuid,
-        RoomUuid: room.Uuid,
+        RoomUuid: null,
+        DoctorNote: "",
+        TotalPrice: resolved.Doctor?.Price ?? resolved.MedicalService?.Price ?? 0,
+        IsPaid: false,
         CreatedAt: now,
         UpdatedAt: now,
+        DeletedAt: new Date(0),
       };
-
-      if (request.Type === "hospital") {
-        const appointment = { ...common };
-        mockHospitalAppointments.push(appointment);
-        return createdResponse(appointment);
-      }
-      if (request.Type === "doctor") {
-        const appointment = { ...common, DoctorUuid: request.DoctorUuid };
-        mockDoctorAppointments.push(appointment);
-        return createdResponse(appointment);
-      }
-
-      const appointment = {
-        ...common,
-        MedicalServiceUuid: request.MedicalServiceUuid,
-      };
-      mockMedicalServiceAppointments.push(appointment);
-      return createdResponse(appointment);
+      const appointment: Appointment =
+        request.Type === "doctor"
+          ? {
+              ...common,
+              Type: AppointmentType.Doctor,
+              DoctorUuid: request.DoctorUuid,
+              MedicalServiceUuid: null,
+            }
+          : request.Type === "medical-service"
+            ? {
+                ...common,
+                Type: AppointmentType.Service,
+                DoctorUuid: null,
+                MedicalServiceUuid: request.MedicalServiceUuid,
+              }
+            : {
+                ...common,
+                Type: AppointmentType.Hospital,
+                DoctorUuid: null,
+                MedicalServiceUuid: null,
+              };
+      mockAppointments.push(appointment);
+      const appointmentView = toAppointmentView(appointment);
+      return appointmentView
+        ? createdResponse(appointmentView)
+        : notFoundResponse();
     });
 
   mock
@@ -319,19 +326,14 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
           errorBody("OUTSIDE_WORKING_HOURS", "Thời gian nằm ngoài giờ làm việc."),
         ];
       }
-      if (!canBook(resolved, appointmentAt, request.AccountUuid)) {
+      if (!canBook(resolved, appointmentAt, owned.Appointment.PatientUuid, uuid)) {
         return [
           409,
           errorBody("SLOT_CONFLICT", "Thời gian này vừa không còn khả dụng."),
         ];
       }
-      const room = findAvailableRoom(resolved.Hospital.Uuid, appointmentAt);
-      if (!room) {
-        return [409, errorBody("SLOT_CONFLICT", "Thời gian này vừa không còn khả dụng.")];
-      }
-
-      owned.Appointment.AppointmentAt = appointmentAt;
-      owned.Appointment.RoomUuid = room.Uuid;
+      owned.Appointment.StartTime = appointmentAt;
+      owned.Appointment.RoomUuid = null;
       owned.Appointment.UpdatedAt = new Date();
       rescheduledAppointmentUuids.add(uuid);
       return [
@@ -371,61 +373,15 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
     if (!authenticatedAccountUuid || accountUuid !== authenticatedAccountUuid) {
       return unauthorizedResponse();
     }
-    const hospitalAppointment = mockHospitalAppointments.find(
-      (item) => item.Uuid === uuid && item.AccountUuid === accountUuid,
-    );
-    if (hospitalAppointment) {
-      const hospital = mockHospitals.find(
-        (item) => item.Uuid === hospitalAppointment.HospitalUuid,
-      );
-      if (!hospital) return notFoundResponse();
-      return confirmationResponse(
-        "hospital",
-        hospitalAppointment,
-        hospital.Name,
-        hospital.Name,
-      );
-    }
-
-    const doctorAppointment = mockDoctorAppointments.find(
-      (item) => item.Uuid === uuid && item.AccountUuid === accountUuid,
-    );
-    if (doctorAppointment) {
-      const doctor = mockDoctors.find(
-        (item) => item.Uuid === doctorAppointment.DoctorUuid,
-      );
-      const hospital = mockHospitals.find(
-        (item) => item.Uuid === doctorAppointment.HospitalUuid,
-      );
-      if (!doctor || !hospital) return notFoundResponse();
-      return confirmationResponse(
-        "doctor",
-        doctorAppointment,
-        doctor.Name,
-        hospital.Name,
-      );
-    }
-
-    const serviceAppointment = mockMedicalServiceAppointments.find(
-      (item) => item.Uuid === uuid && item.AccountUuid === accountUuid,
-    );
-    if (serviceAppointment) {
-      const service = mockMedicalServices.find(
-        (item) => item.Uuid === serviceAppointment.MedicalServiceUuid,
-      );
-      const hospital = mockHospitals.find(
-        (item) => item.Uuid === serviceAppointment.HospitalUuid,
-      );
-      if (!service || !hospital) return notFoundResponse();
-      return confirmationResponse(
-        "medical-service",
-        serviceAppointment,
-        service.Name,
-        hospital.Name,
-      );
-    }
-
-    return notFoundResponse();
+    const presentation = getAppointmentPresentation(uuid, accountUuid);
+    return presentation
+      ? confirmationResponse(
+          presentation.Type,
+          presentation.Appointment,
+          presentation.TargetName,
+          presentation.HospitalName,
+        )
+      : notFoundResponse();
   });
 }
 
@@ -441,21 +397,27 @@ function getOwnedAppointment(
     return null;
   }
   const found = findAppointment(uuid);
-  return found?.Appointment.AccountUuid === accountUuid ? found : null;
+  const patient = getPatientByAccountUuid(accountUuid);
+  return found?.Appointment.PatientUuid === patient?.Uuid ? found : null;
 }
 
 function findAppointment(uuid: string): OwnedAppointment | null {
-  const hospital = mockHospitalAppointments.find((item) => item.Uuid === uuid);
-  if (hospital) return { Type: "hospital", Appointment: hospital };
-  const doctor = mockDoctorAppointments.find((item) => item.Uuid === uuid);
-  if (doctor) return { Type: "doctor", Appointment: doctor };
-  const service = mockMedicalServiceAppointments.find((item) => item.Uuid === uuid);
-  return service ? { Type: "medical-service", Appointment: service } : null;
+  const appointment = mockAppointments.find(
+    (item) => item.Uuid === uuid && item.DeletedAt.getTime() === 0,
+  );
+  return appointment
+    ? { Type: toBookingType(appointment.Type), Appointment: appointment }
+    : null;
 }
 
 function getAppointmentPresentations(accountUuid: string) {
-  return getAllAppointments()
-    .filter((item) => item.AccountUuid === accountUuid)
+  const patient = getPatientByAccountUuid(accountUuid);
+  if (!patient) return [];
+  return mockAppointments
+    .filter(
+      (item) =>
+        item.PatientUuid === patient.Uuid && item.DeletedAt.getTime() === 0,
+    )
     .map((item) => {
       const found = findAppointment(item.Uuid);
       return found
@@ -467,9 +429,9 @@ function getAppointmentPresentations(accountUuid: string) {
 
 function getAppointmentPresentation(uuid: string, accountUuid: string) {
   const found = findAppointment(uuid);
-  return found?.Appointment.AccountUuid === accountUuid
-    ? buildAppointmentPresentation(found.Type, found.Appointment)
-    : null;
+  const patient = getPatientByAccountUuid(accountUuid);
+  if (!found || found.Appointment.PatientUuid !== patient?.Uuid) return null;
+  return buildAppointmentPresentation(found.Type, found.Appointment);
 }
 
 function buildAppointmentPresentation(
@@ -479,13 +441,15 @@ function buildAppointmentPresentation(
   const hospital = mockHospitals.find((item) => item.Uuid === appointment.HospitalUuid);
   const room = mockRooms.find((item) => item.Uuid === appointment.RoomUuid);
   if (!hospital) return null;
+  const appointmentView = toAppointmentView(appointment);
+  if (!appointmentView) return null;
 
-  if (type === "doctor" && "DoctorUuid" in appointment) {
+  if (type === "doctor" && appointment.DoctorUuid) {
     const doctor = mockDoctors.find((item) => item.Uuid === appointment.DoctorUuid);
     if (!doctor) return null;
     return {
       Type: type,
-      Appointment: appointment,
+      Appointment: appointmentView,
       TargetName: doctor.Name,
       HospitalName: hospital.Name,
       HospitalSlug: hospital.Slug,
@@ -493,14 +457,14 @@ function buildAppointmentPresentation(
       RoomName: room?.Name ?? "",
     };
   }
-  if (type === "medical-service" && "MedicalServiceUuid" in appointment) {
+  if (type === "medical-service" && appointment.MedicalServiceUuid) {
     const service = mockMedicalServices.find(
       (item) => item.Uuid === appointment.MedicalServiceUuid,
     );
     if (!service) return null;
     return {
       Type: type,
-      Appointment: appointment,
+      Appointment: appointmentView,
       TargetName: service.Name,
       HospitalName: hospital.Name,
       HospitalSlug: hospital.Slug,
@@ -510,7 +474,7 @@ function buildAppointmentPresentation(
   }
   return {
     Type: "hospital",
-    Appointment: appointment,
+    Appointment: appointmentView,
     TargetName: hospital.Name,
     HospitalName: hospital.Name,
     HospitalSlug: hospital.Slug,
@@ -526,7 +490,7 @@ function validateEditable(appointment: Appointment): [number, unknown] | null {
   ) {
     return [409, errorBody("TERMINAL_STATUS", "Trạng thái lịch hẹn không cho phép thao tác này.")];
   }
-  if (appointment.AppointmentAt.getTime() - Date.now() < 24 * 60 * 60 * 1000) {
+  if (appointment.StartTime.getTime() - Date.now() < 24 * 60 * 60 * 1000) {
     return [409, errorBody("CHANGE_DEADLINE", "Chỉ có thể thao tác trước giờ khám ít nhất 24 giờ.")];
   }
   return null;
@@ -535,9 +499,9 @@ function validateEditable(appointment: Appointment): [number, unknown] | null {
 function resolveExistingBooking(owned: OwnedAppointment) {
   const { Appointment: appointment, Type: type } = owned;
   const targetUuid =
-    type === "doctor" && "DoctorUuid" in appointment
+    type === "doctor" && appointment.DoctorUuid
       ? appointment.DoctorUuid
-      : type === "medical-service" && "MedicalServiceUuid" in appointment
+      : type === "medical-service" && appointment.MedicalServiceUuid
         ? appointment.MedicalServiceUuid
         : appointment.HospitalUuid;
   return resolveBooking(type, targetUuid, appointment.HospitalUuid);
@@ -685,58 +649,101 @@ function validatePatient(
 function canBook(
   resolved: ResolvedBooking,
   appointmentAt: Date,
-  accountUuid: string,
+  patientUuid: string,
+  excludeUuid?: string,
 ) {
   const timestamp = appointmentAt.getTime();
-  if (hasAccountConflict(accountUuid, timestamp)) return false;
+  if (hasPatientConflict(patientUuid, timestamp, excludeUuid)) return false;
   if (
     resolved.Doctor &&
-    mockDoctorAppointments.some(
+    mockAppointments.some(
       (item) =>
         item.DoctorUuid === resolved.Doctor?.Uuid &&
-        item.AppointmentAt.getTime() === timestamp &&
-        item.Status !== AppointmentStatus.Cancelled,
+        item.StartTime.getTime() === timestamp &&
+        isBlockingAppointment(item, excludeUuid),
     )
   ) {
     return false;
   }
-  return Boolean(findAvailableRoom(resolved.Hospital.Uuid, appointmentAt));
+  return hasHospitalCapacity(resolved.Hospital.Uuid, timestamp, excludeUuid);
 }
 
-function findAvailableRoom(hospitalUuid: string, appointmentAt: Date) {
-  return mockRooms.find(
+function hasHospitalCapacity(
+  hospitalUuid: string,
+  timestamp: number,
+  excludeUuid?: string,
+) {
+  const numberOfRooms = mockRooms.filter(
     (room) =>
       room.HospitalUuid === hospitalUuid &&
-      room.Status === RoomStatus.Available &&
-      !hasRoomConflict(room, appointmentAt.getTime()),
-  );
-}
-
-function hasRoomConflict(room: Room, timestamp: number) {
-  return getAllAppointments().some(
+      room.Status === RoomStatus.Available,
+  ).length;
+  const numberOfAppointments = mockAppointments.filter(
     (item) =>
-      item.RoomUuid === room.Uuid &&
-      item.AppointmentAt.getTime() === timestamp &&
-      item.Status !== AppointmentStatus.Cancelled,
-  );
+      item.HospitalUuid === hospitalUuid &&
+      item.StartTime.getTime() === timestamp &&
+      isBlockingAppointment(item, excludeUuid),
+  ).length;
+  return numberOfAppointments < numberOfRooms;
 }
 
-function hasAccountConflict(accountUuid: string, timestamp: number) {
-  if (!accountUuid) return false;
-  return getAllAppointments().some(
+function hasPatientConflict(patientUuid: string, timestamp: number, excludeUuid?: string) {
+  if (!patientUuid) return false;
+  return mockAppointments.some(
     (item) =>
-      item.AccountUuid === accountUuid &&
-      item.AppointmentAt.getTime() === timestamp &&
-      item.Status !== AppointmentStatus.Cancelled,
+      item.PatientUuid === patientUuid &&
+      item.StartTime.getTime() === timestamp &&
+      isBlockingAppointment(item, excludeUuid),
   );
 }
 
-function getAllAppointments() {
-  return [
-    ...mockHospitalAppointments,
-    ...mockDoctorAppointments,
-    ...mockMedicalServiceAppointments,
-  ];
+function isBlockingAppointment(appointment: Appointment, excludeUuid?: string) {
+  return (
+    appointment.Uuid !== excludeUuid &&
+    appointment.DeletedAt.getTime() === 0 &&
+    appointment.Status !== AppointmentStatus.Cancelled
+  );
+}
+
+function toAppointmentView(appointment: Appointment): AppointmentView | null {
+  const patient = mockPatientProfiles.find(
+    (item) => item.Uuid === appointment.PatientUuid,
+  );
+  if (!patient) return null;
+  const common = {
+    Uuid: appointment.Uuid,
+    PatientName: appointment.PatientName,
+    Gender: appointment.Gender,
+    Note: appointment.Note,
+    MedicalCode: appointment.MedicalCode,
+    AppointmentAt: appointment.StartTime,
+    Status: appointment.Status,
+    AccountUuid: patient.AccountUuid,
+    HospitalUuid: appointment.HospitalUuid,
+    RoomUuid: appointment.RoomUuid ?? "",
+    CreatedAt: appointment.CreatedAt,
+    UpdatedAt: appointment.UpdatedAt,
+  };
+  if (appointment.Type === AppointmentType.Doctor && appointment.DoctorUuid) {
+    return { ...common, DoctorUuid: appointment.DoctorUuid };
+  }
+  if (
+    appointment.Type === AppointmentType.Service &&
+    appointment.MedicalServiceUuid
+  ) {
+    return { ...common, MedicalServiceUuid: appointment.MedicalServiceUuid };
+  }
+  return common;
+}
+
+function toBookingType(type: AppointmentType): BookingType {
+  if (type === AppointmentType.Doctor) return "doctor";
+  if (type === AppointmentType.Service) return "medical-service";
+  return "hospital";
+}
+
+function getPatientByAccountUuid(accountUuid: string) {
+  return mockPatientProfiles.find((item) => item.AccountUuid === accountUuid);
 }
 
 function parseBody<T>(data: unknown): T {

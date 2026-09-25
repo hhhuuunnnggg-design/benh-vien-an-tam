@@ -1,12 +1,10 @@
 import type {
   AppointmentStatus,
-  DoctorAppointment,
   DoctorProfile,
+  Gender,
   Hospital,
-  HospitalAppointment,
   HospitalMedicalService,
   MedicalService,
-  MedicalServiceAppointment,
 } from "@/types/models";
 import type { PaginatedData } from "@/lib/http/response";
 
@@ -41,29 +39,44 @@ export type CommonAppointmentRequest = {
   HospitalUuid: string;
 };
 
-export type HospitalAppointmentRequest = CommonAppointmentRequest & {
+export type HospitalBookingRequest = CommonAppointmentRequest & {
   Type: "hospital";
 };
 
-export type DoctorAppointmentRequest = CommonAppointmentRequest & {
+export type DoctorBookingRequest = CommonAppointmentRequest & {
   Type: "doctor";
   DoctorUuid: string;
 };
 
-export type MedicalServiceAppointmentRequest = CommonAppointmentRequest & {
+export type MedicalServiceBookingRequest = CommonAppointmentRequest & {
   Type: "medical-service";
   MedicalServiceUuid: string;
 };
 
 export type CreateAppointmentRequest =
-  | HospitalAppointmentRequest
-  | DoctorAppointmentRequest
-  | MedicalServiceAppointmentRequest;
+  | HospitalBookingRequest
+  | DoctorBookingRequest
+  | MedicalServiceBookingRequest;
+
+type AppointmentViewBase = {
+  Uuid: string;
+  PatientName: string;
+  Gender: Gender;
+  Note: string;
+  MedicalCode: string;
+  AppointmentAt: Date;
+  Status: AppointmentStatus;
+  AccountUuid: string;
+  HospitalUuid: string;
+  RoomUuid: string;
+  CreatedAt: Date;
+  UpdatedAt: Date;
+};
 
 export type Appointment =
-  | HospitalAppointment
-  | DoctorAppointment
-  | MedicalServiceAppointment;
+  | AppointmentViewBase
+  | (AppointmentViewBase & { DoctorUuid: string })
+  | (AppointmentViewBase & { MedicalServiceUuid: string });
 
 export type AppointmentConfirmation = {
   Type: BookingType;

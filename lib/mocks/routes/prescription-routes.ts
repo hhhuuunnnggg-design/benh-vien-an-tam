@@ -1,12 +1,10 @@
 import type AxiosMockAdapter from "axios-mock-adapter";
 
 import { mockAccounts } from "@/data/mocks/accounts";
-import { mockDoctorAppointments } from "@/data/mocks/doctor-appointments";
+import { mockAppointments } from "@/data/mocks/appointments";
 import { mockDoctors } from "@/data/mocks/doctors";
-import { mockHospitalAppointments } from "@/data/mocks/hospital-appointments";
 import { mockHospitals } from "@/data/mocks/hospitals";
 import { mockMedicines } from "@/data/mocks/medicines";
-import { mockMedicalServiceAppointments } from "@/data/mocks/medical-service-appointments";
 import { mockPatientProfiles } from "@/data/mocks/patient-profiles";
 import { mockPrescriptionDetails } from "@/data/mocks/prescription-details";
 import { mockPrescriptions } from "@/data/mocks/prescriptions";
@@ -16,6 +14,7 @@ import {
 } from "@/lib/booking/working-hours";
 import { getStringParam } from "@/lib/mocks/query-utils";
 import {
+  AppointmentType,
   BaseStatus,
   PrescriptionStatus,
   Role,
@@ -145,47 +144,24 @@ function buildView(prescription: Prescription): PrescriptionView | null {
 function getLinkedAppointment(
   prescription: Prescription,
 ): LinkedPrescriptionAppointment | null {
-  const linkedUuids = [
-    prescription.HospitalAppointmentUuid,
-    prescription.DoctorAppointmentUuid,
-    prescription.MedicalServiceAppointmentUuid,
-  ].filter(Boolean);
-  if (linkedUuids.length !== 1) return null;
-  const profile = mockPatientProfiles.find(
-    (item) => item.Uuid === prescription.PatientProfileUuid,
+  if (!prescription.AppointmentUuid) return null;
+  const appointment = mockAppointments.find(
+    (item) =>
+      item.Uuid === prescription.AppointmentUuid &&
+      item.PatientUuid === prescription.PatientProfileUuid &&
+      item.HospitalUuid === prescription.HospitalUuid &&
+      (item.Type !== AppointmentType.Doctor ||
+        item.DoctorUuid === prescription.DoctorProfileUuid) &&
+      item.DeletedAt.getTime() === 0,
   );
-  if (!profile) return null;
-  if (prescription.DoctorAppointmentUuid) {
-    const appointment = mockDoctorAppointments.find(
-      (item) =>
-        item.Uuid === prescription.DoctorAppointmentUuid &&
-        item.AccountUuid === profile.AccountUuid &&
-        item.DoctorUuid === prescription.DoctorProfileUuid &&
-        item.HospitalUuid === prescription.HospitalUuid,
-    );
-    return appointment ? { Uuid: appointment.Uuid, Type: "doctor" } : null;
-  }
-  if (prescription.HospitalAppointmentUuid) {
-    const appointment = mockHospitalAppointments.find(
-      (item) =>
-        item.Uuid === prescription.HospitalAppointmentUuid &&
-        item.AccountUuid === profile.AccountUuid &&
-        item.HospitalUuid === prescription.HospitalUuid,
-    );
-    return appointment ? { Uuid: appointment.Uuid, Type: "hospital" } : null;
-  }
-  if (prescription.MedicalServiceAppointmentUuid) {
-    const appointment = mockMedicalServiceAppointments.find(
-      (item) =>
-        item.Uuid === prescription.MedicalServiceAppointmentUuid &&
-        item.AccountUuid === profile.AccountUuid &&
-        item.HospitalUuid === prescription.HospitalUuid,
-    );
-    return appointment
-      ? { Uuid: appointment.Uuid, Type: "medical-service" }
-      : null;
-  }
-  return null;
+  if (!appointment) return null;
+  const type =
+    appointment.Type === AppointmentType.Doctor
+      ? "doctor"
+      : appointment.Type === AppointmentType.Service
+        ? "medical-service"
+        : "hospital";
+  return { Uuid: appointment.Uuid, Type: type };
 }
 
 function getCurrentPatient(headers: unknown) {
