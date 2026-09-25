@@ -1,11 +1,10 @@
 import type AxiosMockAdapter from "axios-mock-adapter";
 
 import { mockAccounts } from "@/data/mocks/accounts";
-import { mockDoctorAppointments } from "@/data/mocks/doctor-appointments";
+import { mockAppointmentMedicalServices } from "@/data/mocks/appointment-medical-services";
+import { mockAppointments } from "@/data/mocks/appointments";
 import { mockDoctors } from "@/data/mocks/doctors";
-import { mockHospitalAppointments } from "@/data/mocks/hospital-appointments";
 import { mockHospitals } from "@/data/mocks/hospitals";
-import { mockMedicalServiceAppointments } from "@/data/mocks/medical-service-appointments";
 import { mockMedicalServices } from "@/data/mocks/medical-services";
 import { mockPatientProfiles } from "@/data/mocks/patient-profiles";
 import { mockReviewDoctors } from "@/data/mocks/review-doctors";
@@ -14,6 +13,7 @@ import { mockReviewMedicalServices } from "@/data/mocks/review-medical-services"
 import { getStringParam } from "@/lib/mocks/query-utils";
 import {
   AppointmentStatus,
+  AppointmentType,
   BaseStatus,
   Role,
   type ReviewHospital,
@@ -36,7 +36,6 @@ export function registerReviewRoutes(mock: AxiosMockAdapter) {
     const appointmentUuid = getStringParam(config.params, "appointmentUuid");
     const targets = getAppointmentTargets(
       appointmentUuid,
-      current.accountUuid,
       current.patientUuid,
     );
     if (!targets) {
@@ -155,71 +154,64 @@ export function registerReviewRoutes(mock: AxiosMockAdapter) {
 
 function getAppointmentTargets(
   appointmentUuid: string,
-  accountUuid: string,
   patientUuid: string,
 ): ReviewEligibilityTarget[] | null {
-  const hospitalAppointment = mockHospitalAppointments.find(
+  const appointment = mockAppointments.find(
     (item) =>
       item.Uuid === appointmentUuid &&
-      item.AccountUuid === accountUuid &&
-      item.Status === AppointmentStatus.Done,
+      item.PatientUuid === patientUuid &&
+      item.Status === AppointmentStatus.Done &&
+      item.DeletedAt.getTime() === 0,
   );
-  if (hospitalAppointment) {
-    const hospital = mockHospitals.find(
-      (item) => item.Uuid === hospitalAppointment.HospitalUuid,
-    );
-    return hospital
-      ? [buildTarget("hospital", hospital.Uuid, hospital.Name, patientUuid)]
-      : null;
-  }
-
-  const doctorAppointment = mockDoctorAppointments.find(
-    (item) =>
-      item.Uuid === appointmentUuid &&
-      item.AccountUuid === accountUuid &&
-      item.Status === AppointmentStatus.Done,
+  if (!appointment) return null;
+  const hospital = mockHospitals.find(
+    (item) => item.Uuid === appointment.HospitalUuid,
   );
-  if (doctorAppointment) {
-    const hospital = mockHospitals.find(
-      (item) => item.Uuid === doctorAppointment.HospitalUuid,
-    );
+  if (!hospital) return null;
+  const targets: ReviewEligibilityTarget[] = [
+    buildTarget("hospital", hospital.Uuid, hospital.Name, patientUuid),
+  ];
+  if (appointment.Type === AppointmentType.Doctor && appointment.DoctorUuid) {
     const doctor = mockDoctors.find(
-      (item) => item.Uuid === doctorAppointment.DoctorUuid,
+      (item) => item.Uuid === appointment.DoctorUuid,
     );
-    return hospital && doctor
-      ? [
-          buildTarget("hospital", hospital.Uuid, hospital.Name, patientUuid),
-          buildTarget("doctor", doctor.Uuid, doctor.Name, patientUuid),
-        ]
-      : null;
+    if (!doctor) return null;
+    targets.push(buildTarget("doctor", doctor.Uuid, doctor.Name, patientUuid));
   }
-
-  const serviceAppointment = mockMedicalServiceAppointments.find(
-    (item) =>
-      item.Uuid === appointmentUuid &&
-      item.AccountUuid === accountUuid &&
-      item.Status === AppointmentStatus.Done,
-  );
-  if (serviceAppointment) {
-    const hospital = mockHospitals.find(
-      (item) => item.Uuid === serviceAppointment.HospitalUuid,
-    );
+  if (
+    appointment.Type === AppointmentType.Service &&
+    appointment.MedicalServiceUuid
+  ) {
     const service = mockMedicalServices.find(
-      (item) => item.Uuid === serviceAppointment.MedicalServiceUuid,
+      (item) => item.Uuid === appointment.MedicalServiceUuid,
     );
-    return hospital && service
-      ? [
-          buildTarget("hospital", hospital.Uuid, hospital.Name, patientUuid),
-          buildTarget(
-            "medical-service",
-            service.Uuid,
-            service.Name,
-            patientUuid,
-          ),
-        ]
-      : null;
+    if (!service) return null;
+    targets.push(
+      buildTarget("medical-service", service.Uuid, service.Name, patientUuid),
+    );
   }
-  return null;
+  for (const relation of mockAppointmentMedicalServices.filter(
+    (item) => item.AppointmentUuid === appointment.Uuid,
+  )) {
+    if (
+      targets.some(
+        (item) =>
+          item.Type === "medical-service" &&
+          item.TargetUuid === relation.MedicalServiceUuid,
+      )
+    ) {
+      continue;
+    }
+    const service = mockMedicalServices.find(
+      (item) => item.Uuid === relation.MedicalServiceUuid,
+    );
+    if (service) {
+      targets.push(
+        buildTarget("medical-service", service.Uuid, service.Name, patientUuid),
+      );
+    }
+  }
+  return targets;
 }
 
 function buildTarget(
@@ -246,32 +238,29 @@ function hasDoneAppointment(
   targetUuid: string,
   accountUuid: string,
 ) {
-  if (type === "hospital") {
-    return [
-      ...mockHospitalAppointments,
-      ...mockDoctorAppointments,
-      ...mockMedicalServiceAppointments,
-    ].some(
-      (item) =>
-        item.AccountUuid === accountUuid &&
-        item.HospitalUuid === targetUuid &&
-        item.Status === AppointmentStatus.Done,
-    );
-  }
-  if (type === "doctor") {
-    return mockDoctorAppointments.some(
-      (item) =>
-        item.AccountUuid === accountUuid &&
-        item.DoctorUuid === targetUuid &&
-        item.Status === AppointmentStatus.Done,
-    );
-  }
-  return mockMedicalServiceAppointments.some(
-    (item) =>
-      item.AccountUuid === accountUuid &&
-      item.MedicalServiceUuid === targetUuid &&
-      item.Status === AppointmentStatus.Done,
+  const patient = mockPatientProfiles.find(
+    (item) => item.AccountUuid === accountUuid,
   );
+  if (!patient) return false;
+  return mockAppointments.some((item) => {
+    if (
+      item.PatientUuid !== patient.Uuid ||
+      item.Status !== AppointmentStatus.Done ||
+      item.DeletedAt.getTime() !== 0
+    ) {
+      return false;
+    }
+    if (type === "hospital") return item.HospitalUuid === targetUuid;
+    if (type === "doctor") return item.DoctorUuid === targetUuid;
+    return (
+      item.MedicalServiceUuid === targetUuid ||
+      mockAppointmentMedicalServices.some(
+        (relation) =>
+          relation.AppointmentUuid === item.Uuid &&
+          relation.MedicalServiceUuid === targetUuid,
+      )
+    );
+  });
 }
 
 function getCurrentPatient(headers: unknown) {

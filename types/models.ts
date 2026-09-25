@@ -46,6 +46,7 @@ export type PatientProfile = {
 export type Hospital = {
   Uuid: Guid;
   Image: string;
+  LImage: string;
   MapUrl: string;
   Slug: string;
   Name: string;
@@ -125,6 +126,8 @@ export type MedicalService = {
   DetailService: string;
   WorkingHour: string;
   Status: BaseStatus;
+  IsInsured: boolean;
+  InsuranceCap: number;
   CreatedAt: Date;
   UpdatedAt: Date;
   DeletedAt: Date;
@@ -169,11 +172,6 @@ export type ReviewMedicalService = {
   CreatedAt: Date;
 };
 
-export enum MedicineStatus {
-  Active = "Active",
-  InActive = "InActive",
-}
-
 export enum MedicineUnit {
   Other = "Other",
   Tablet = "Tablet",
@@ -190,10 +188,90 @@ export type Medicine = {
   Description: string;
   Price: number;
   Unit: MedicineUnit;
-  Status: MedicineStatus;
+  Status: BaseStatus;
+  IsInsured: boolean;
+  InsuranceCap: number;
   CreatedAt: Date;
   UpdatedAt: Date;
   DeletedAt: Date;
+};
+
+export type MedicineInventory = {
+  Uuid: Guid;
+  HospitalUuid: Guid;
+  MedicineUuid: Guid;
+  Quantity: number;
+  MinimumQuantity: number;
+  CreatedAt: Date;
+  UpdatedAt: Date;
+  DeletedAt: Date;
+};
+
+export enum ProviderStatus {
+  Active = "Active",
+  InActive = "InActive",
+}
+
+export type Provider = {
+  Uuid: Guid;
+  Name: string;
+  Address: string;
+  Hotline: string;
+  Status: ProviderStatus;
+  CreatedAt: Date;
+  UpdatedAt: Date;
+  DeletedAt: Date;
+};
+
+export enum ImportTicketStatus {
+  Pending = "Pending",
+  Confirmed = "Confirmed",
+  Cancelled = "Cancelled",
+}
+
+export type ImportTicket = {
+  Uuid: Guid;
+  HospitalUuid: Guid;
+  AccountUuid: Guid;
+  ProviderUuid: Guid;
+  Note: string;
+  Status: ImportTicketStatus;
+  CreatedAt: Date;
+  UpdatedAt: Date;
+  DeletedAt: Date;
+};
+
+export type ImportTicketDetail = {
+  Uuid: Guid;
+  ImportTicketUuid: Guid;
+  MedicineUuid: Guid;
+  Quantity: number;
+  Price: number;
+};
+
+export enum ExportTicketStatus {
+  Pending = "Pending",
+  Confirmed = "Confirmed",
+  Cancelled = "Cancelled",
+}
+
+export type ExportTicket = {
+  Uuid: Guid;
+  HospitalUuid: Guid;
+  AccountUuid: Guid;
+  Note: string;
+  Status: ExportTicketStatus;
+  CreatedAt: Date;
+  UpdatedAt: Date;
+  DeletedAt: Date;
+};
+
+export type ExportTicketDetail = {
+  Uuid: Guid;
+  ExportTicketUuid: Guid;
+  MedicineUuid: Guid;
+  Quantity: number;
+  Price: number;
 };
 
 export enum PrescriptionStatus {
@@ -209,9 +287,7 @@ export type Prescription = {
   HospitalUuid: Guid;
   Status: PrescriptionStatus;
   Note: string;
-  HospitalAppointmentUuid: Guid | null;
-  MedicalServiceAppointmentUuid: Guid | null;
-  DoctorAppointmentUuid: Guid | null;
+  AppointmentUuid: Guid | null;
   CreatedAt: Date;
   UpdatedAt: Date;
   DeletedAt: Date;
@@ -237,49 +313,51 @@ export enum AppointmentStatus {
   Cancelled = "Cancelled",
 }
 
-export type HospitalAppointment = {
+export enum AppointmentType {
+  Doctor = "Doctor",
+  Hospital = "Hospital",
+  Service = "Service",
+}
+
+type AppointmentBase = {
   Uuid: Guid;
   PatientName: string;
-  Gender: string;
-  Note: string;
+  Gender: Gender;
   MedicalCode: string;
-  AppointmentAt: Date;
+  Note: string;
+  StartTime: Date;
   Status: AppointmentStatus;
+  PatientUuid: Guid;
   HospitalUuid: Guid;
-  AccountUuid: Guid;
-  RoomUuid: Guid;
+  RoomUuid: Guid | null;
+  DoctorNote: string;
+  TotalPrice: number;
+  IsPaid: boolean;
   CreatedAt: Date;
   UpdatedAt: Date;
+  DeletedAt: Date;
 };
 
-export type MedicalServiceAppointment = {
+export type Appointment =
+  | (AppointmentBase & {
+      Type: AppointmentType.Hospital;
+      DoctorUuid: null;
+      MedicalServiceUuid: null;
+    })
+  | (AppointmentBase & {
+      Type: AppointmentType.Doctor;
+      DoctorUuid: Guid;
+      MedicalServiceUuid: null;
+    })
+  | (AppointmentBase & {
+      Type: AppointmentType.Service;
+      DoctorUuid: null;
+      MedicalServiceUuid: Guid;
+    });
+
+export type AppointmentMedicalService = {
   Uuid: Guid;
-  PatientName: string;
-  Gender: string;
-  Note: string;
-  MedicalCode: string;
-  AppointmentAt: Date;
-  Status: AppointmentStatus;
+  AppointmentUuid: Guid;
   MedicalServiceUuid: Guid;
-  AccountUuid: Guid;
-  HospitalUuid: Guid;
-  RoomUuid: Guid;
-  CreatedAt: Date;
-  UpdatedAt: Date;
-};
-
-export type DoctorAppointment = {
-  Uuid: Guid;
-  PatientName: string;
-  Gender: string;
-  Note: string;
-  MedicalCode: string;
-  AppointmentAt: Date;
-  Status: AppointmentStatus;
-  DoctorUuid: Guid;
-  AccountUuid: Guid;
-  HospitalUuid: Guid;
-  RoomUuid: Guid;
-  CreatedAt: Date;
-  UpdatedAt: Date;
+  Price: number;
 };
