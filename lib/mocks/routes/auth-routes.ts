@@ -8,7 +8,7 @@ import type {
   PublicAccount,
   RegisterPatientRequest,
 } from "@/types/auth";
-import { BaseStatus, Role, type Account } from "@/types/models";
+import { BaseStatus, ROLE_UUIDS, type Account } from "@/types/models";
 
 function normalizePhone(phone: string) {
   return phone.replace(/[\s.-]/g, "");
@@ -18,7 +18,7 @@ function toPublicAccount(account: Account): PublicAccount {
   return {
     Uuid: account.Uuid,
     Phone: account.Phone,
-    Role: account.Role,
+    RoleUuid: account.RoleUuid,
     Status: account.Status,
     HospitalUuid: account.HospitalUuid,
     CreatedAt: account.CreatedAt,
@@ -47,7 +47,7 @@ export function registerAuthRoutes(mock: AxiosMockAdapter) {
       return [403, { Message: "Tài khoản đã bị vô hiệu hóa." }];
     }
 
-    if (account.Role !== Role.PATIENT) {
+    if (account.RoleUuid !== ROLE_UUIDS.PATIENT) {
       return [403, { Message: "Tài khoản không thuộc phạm vi người bệnh." }];
     }
 
@@ -91,7 +91,7 @@ export function registerAuthRoutes(mock: AxiosMockAdapter) {
       Uuid: accountUuid,
       Phone: phone,
       Password: request.Account.Password,
-      Role: Role.PATIENT,
+      RoleUuid: ROLE_UUIDS.PATIENT,
       Status: BaseStatus.Active,
       HospitalUuid: null,
       CreatedAt: now,

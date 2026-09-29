@@ -5,15 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { internalPortals, internalRoleSlugs, type InternalRoleSlug } from "@/lib/internal-portal";
 
 export function InternalAuthForm({ mode }: { mode: "login" | "forgot-password" }) {
   const router = useRouter();
-  const [role, setRole] = useState<InternalRoleSlug>("hospital-admin");
   const [showPassword, setShowPassword] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,7 +27,7 @@ export function InternalAuthForm({ mode }: { mode: "login" | "forgot-password" }
       return;
     }
 
-    router.push(`/noi-bo/${role}/tong-quan`);
+    router.push("/noi-bo/trang-tong");
   }
 
   if (submitted) {
@@ -41,32 +38,16 @@ export function InternalAuthForm({ mode }: { mode: "login" | "forgot-password" }
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu sẽ được gửi đến bạn.
         </p>
-        <Button className="mt-6" variant="outline" render={<Link href="/noi-bo/dang-nhap" />}>
+        <Link href="/noi-bo/dang-nhap" className={buttonVariants({ variant: "outline", className: "mt-6" })}>
           <ArrowLeft aria-hidden="true" />
           Quay lại đăng nhập
-        </Button>
+        </Link>
       </div>
     );
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {mode === "login" ? (
-        <div className="space-y-2">
-          <Label htmlFor="internal-role">Cổng làm việc</Label>
-          <Select value={role} onValueChange={(value) => setRole(value as InternalRoleSlug)}>
-            <SelectTrigger id="internal-role" className="h-11 w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {internalRoleSlugs.map((slug) => (
-                <SelectItem key={slug} value={slug}>{internalPortals[slug].name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : null}
-
       <div className="space-y-2">
         <Label htmlFor="internal-email">Email công việc</Label>
         <Input id="internal-email" name="email" type="email" autoComplete="email" required placeholder="ten@benhvien.vn" className="h-11" />

@@ -96,7 +96,7 @@ export function DoctorCard({
     <article className="flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md">
       <div className="relative aspect-[16/9] bg-muted">
         <Image
-          src={doctor.Image}
+          src={doctor.Avatar}
           alt={`Hình minh họa ${doctor.Name}`}
           fill
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"

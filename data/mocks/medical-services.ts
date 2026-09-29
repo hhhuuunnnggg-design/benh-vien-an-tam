@@ -15,6 +15,7 @@ export const mockMedicalServices: MedicalService[] = [
     Status: BaseStatus.Active,
     IsInsured: true,
     InsuranceCap: 0.8,
+    IsFeatured: true,
     CreatedAt: new Date("2025-02-01T00:00:00.000Z"),
     UpdatedAt: new Date("2026-08-19T00:00:00.000Z"),
     DeletedAt: new Date(0),
@@ -33,6 +34,7 @@ export const mockMedicalServices: MedicalService[] = [
     Status: BaseStatus.Active,
     IsInsured: true,
     InsuranceCap: 0.7,
+    IsFeatured: true,
     CreatedAt: new Date("2025-02-02T00:00:00.000Z"),
     UpdatedAt: new Date("2026-08-17T00:00:00.000Z"),
     DeletedAt: new Date(0),
@@ -51,6 +53,7 @@ export const mockMedicalServices: MedicalService[] = [
     Status: BaseStatus.Active,
     IsInsured: true,
     InsuranceCap: 0.8,
+    IsFeatured: true,
     CreatedAt: new Date("2025-02-03T00:00:00.000Z"),
     UpdatedAt: new Date("2026-08-15T00:00:00.000Z"),
     DeletedAt: new Date(0),
@@ -69,6 +72,7 @@ export const mockMedicalServices: MedicalService[] = [
     Status: BaseStatus.Active,
     IsInsured: false,
     InsuranceCap: 0,
+    IsFeatured: false,
     CreatedAt: new Date("2025-02-04T00:00:00.000Z"),
     UpdatedAt: new Date("2026-08-14T00:00:00.000Z"),
     DeletedAt: new Date(0),
@@ -87,6 +91,7 @@ export const mockMedicalServices: MedicalService[] = [
     Status: BaseStatus.Active,
     IsInsured: true,
     InsuranceCap: 0.6,
+    IsFeatured: false,
     CreatedAt: new Date("2025-02-05T00:00:00.000Z"),
     UpdatedAt: new Date("2026-08-13T00:00:00.000Z"),
     DeletedAt: new Date(0),
@@ -103,6 +108,7 @@ export const mockMedicalServices: MedicalService[] = [
     Status: BaseStatus.InActive,
     IsInsured: false,
     InsuranceCap: 0,
+    IsFeatured: false,
     CreatedAt: new Date("2025-02-06T00:00:00.000Z"),
     UpdatedAt: new Date("2026-08-10T00:00:00.000Z"),
     DeletedAt: new Date(0),
@@ -110,5 +116,4 @@ export const mockMedicalServices: MedicalService[] = [
 ];
 
 export const featuredMedicalServices = mockMedicalServices
-  .filter((service) => service.Status === BaseStatus.Active)
-  .slice(0, 3);
+  .filter((service) => service.Status === BaseStatus.Active && service.IsFeatured);

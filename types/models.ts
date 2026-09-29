@@ -1,13 +1,13 @@
 export type Guid = string;
 
-export enum Role {
-  SYSTEM_ADMIN = "SYSTEM_ADMIN",
-  HOSPITAL_ADMIN = "HOSPITAL_ADMIN",
-  DOCTOR = "DOCTOR",
-  STAFF = "STAFF",
-  WAREHOUSE_MANAGER = "WAREHOUSE_MANAGER",
-  PATIENT = "PATIENT",
-}
+export const ROLE_UUIDS = {
+  SYSTEM_ADMIN: "10000000-0000-4000-8000-000000000001",
+  HOSPITAL_ADMIN: "10000000-0000-4000-8000-000000000002",
+  DOCTOR: "10000000-0000-4000-8000-000000000003",
+  STAFF: "10000000-0000-4000-8000-000000000004",
+  WAREHOUSE_MANAGER: "10000000-0000-4000-8000-000000000005",
+  PATIENT: "10000000-0000-4000-8000-000000000006",
+} as const;
 
 export enum BaseStatus {
   Active = "Active",
@@ -24,7 +24,7 @@ export type Account = {
   Uuid: Guid;
   Phone: string;
   Password: string;
-  Role: Role;
+  RoleUuid: Guid;
   Status: BaseStatus;
   HospitalUuid: Guid | null;
   CreatedAt: Date;
@@ -79,7 +79,7 @@ export type Room = {
 
 export type DoctorProfile = {
   Uuid: Guid;
-  Image: string;
+  Avatar: string;
   Slug: string;
   Name: string;
   Price: number;
@@ -88,6 +88,7 @@ export type DoctorProfile = {
   Expertise: string;
   Specialty: string;
   Workplace: string;
+  IsFeatured: boolean;
   AccountUuid: Guid;
   HospitalUuid: Guid;
 };
@@ -128,6 +129,7 @@ export type MedicalService = {
   Status: BaseStatus;
   IsInsured: boolean;
   InsuranceCap: number;
+  IsFeatured: boolean;
   CreatedAt: Date;
   UpdatedAt: Date;
   DeletedAt: Date;
@@ -326,6 +328,8 @@ type AppointmentBase = {
   MedicalCode: string;
   Note: string;
   StartTime: Date;
+  AppointmentDate: Date;
+  TimeSlot: Guid;
   Status: AppointmentStatus;
   PatientUuid: Guid;
   HospitalUuid: Guid;
@@ -360,4 +364,51 @@ export type AppointmentMedicalService = {
   AppointmentUuid: Guid;
   MedicalServiceUuid: Guid;
   Price: number;
+};
+
+export enum PermissionAction {
+  Read = "Read",
+  Create = "Create",
+  Update = "Update",
+  Delete = "Delete",
+}
+
+export type TimeWorking = {
+  Uuid: Guid;
+  DayOfWeek: number;
+  StartTime: string;
+  EndTime: string;
+  Status: BaseStatus;
+  CreatedAt: Date;
+  UpdatedAt: Date;
+  DeletedAt: Date;
+};
+
+export type DoctorWorking = { Uuid: Guid; DoctorUuid: Guid; WorkingUuid: Guid };
+export type HospitalWorking = { Uuid: Guid; HospitalUuid: Guid; WorkingUuid: Guid };
+export type ServiceWorking = { Uuid: Guid; ServiceUuid: Guid; WorkingUuid: Guid };
+
+export type Role = {
+  Uuid: Guid;
+  Name: string;
+  Description: string;
+  IsDoctor: boolean;
+  Status: BaseStatus;
+  CreatedAt: Date;
+  UpdatedAt: Date;
+  DeletedAt: Date;
+};
+
+export type Permission = {
+  Uuid: Guid;
+  Icon: string;
+  Name: string;
+  Description: string;
+};
+
+export type RolePermission = {
+  Uuid: Guid;
+  RoleUuid: Guid;
+  PermissionUuid: Guid;
+  Action: PermissionAction;
 };

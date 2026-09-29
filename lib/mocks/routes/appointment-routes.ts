@@ -8,6 +8,7 @@ import { mockHospitals } from "@/data/mocks/hospitals";
 import { mockMedicalServices } from "@/data/mocks/medical-services";
 import { mockPatientProfiles } from "@/data/mocks/patient-profiles";
 import { mockRooms } from "@/data/mocks/rooms";
+import { mockTimeWorkings } from "@/data/mocks/time-workings";
 import {
   createSlotTimes,
   formatWorkingTime,
@@ -33,7 +34,7 @@ import {
   AppointmentType,
   BaseStatus,
   Gender,
-  Role,
+  ROLE_UUIDS,
   RoomStatus,
   type Appointment,
   type DoctorProfile,
@@ -42,6 +43,19 @@ import {
 } from "@/types/models";
 
 const rescheduledAppointmentUuids = new Set<string>();
+
+function resolveWorkingSlot(appointmentAt: Date) {
+  const parts = getVietnamDateTimeParts(appointmentAt);
+  const dayOfWeek = new Date(`${parts.Date}T12:00:00+07:00`).getDay();
+  const slot = mockTimeWorkings.find(
+    (working) => working.DayOfWeek === dayOfWeek && working.StartTime <= parts.Time && working.EndTime >= parts.Time,
+  );
+
+  return {
+    AppointmentDate: new Date(`${parts.Date}T00:00:00+07:00`),
+    TimeSlot: slot?.Uuid ?? mockTimeWorkings[0].Uuid,
+  };
+}
 
 type ResolvedBooking = {
   Type: BookingType;
@@ -237,6 +251,7 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
         Note: request.Note.trim(),
         MedicalCode: request.MedicalCode,
         StartTime: appointmentAt,
+        ...resolveWorkingSlot(appointmentAt),
         Status: AppointmentStatus.Pending,
         PatientUuid: patient.Uuid,
         HospitalUuid: resolved.Hospital.Uuid,
@@ -333,6 +348,7 @@ export function registerAppointmentRoutes(mock: AxiosMockAdapter) {
         ];
       }
       owned.Appointment.StartTime = appointmentAt;
+      Object.assign(owned.Appointment, resolveWorkingSlot(appointmentAt));
       owned.Appointment.RoomUuid = null;
       owned.Appointment.UpdatedAt = new Date();
       rescheduledAppointmentUuids.add(uuid);
@@ -592,7 +608,7 @@ function findPublicDoctor(uuid: string) {
   const account = mockAccounts.find((item) => item.Uuid === doctor?.AccountUuid);
   const hospital = doctor ? findPublicHospital(doctor.HospitalUuid) : undefined;
   return account?.Status === BaseStatus.Active &&
-    account.Role === Role.DOCTOR &&
+    account.RoleUuid === ROLE_UUIDS.DOCTOR &&
     hospital
     ? doctor
     : undefined;
@@ -616,7 +632,7 @@ function validatePatient(
   const account = mockAccounts.find(
     (item) =>
       item.Uuid === request.AccountUuid &&
-      item.Role === Role.PATIENT &&
+      item.RoleUuid === ROLE_UUIDS.PATIENT &&
       item.Status === BaseStatus.Active,
   );
   const profile = mockPatientProfiles.find(
@@ -816,7 +832,7 @@ function getAuthenticatedAccountUuid(headers: unknown) {
   const account = mockAccounts.find(
     (item) =>
       item.Uuid === value &&
-      item.Role === Role.PATIENT &&
+      item.RoleUuid === ROLE_UUIDS.PATIENT &&
       item.Status === BaseStatus.Active,
   );
   const profile = mockPatientProfiles.find(

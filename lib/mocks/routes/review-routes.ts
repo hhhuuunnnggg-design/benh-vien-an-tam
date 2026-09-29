@@ -15,7 +15,7 @@ import {
   AppointmentStatus,
   AppointmentType,
   BaseStatus,
-  Role,
+  ROLE_UUIDS,
   type ReviewHospital,
 } from "@/types/models";
 import type {
@@ -268,7 +268,7 @@ function getCurrentPatient(headers: unknown) {
   const account = mockAccounts.find(
     (item) =>
       item.Uuid === accountUuid &&
-      item.Role === Role.PATIENT &&
+      item.RoleUuid === ROLE_UUIDS.PATIENT &&
       item.Status === BaseStatus.Active,
   );
   const profile = mockPatientProfiles.find(
@@ -436,7 +436,7 @@ function hasDoneAppointmentForPatient(
   const account = mockAccounts.find(
     (item) =>
       item.Uuid === profile?.AccountUuid &&
-      item.Role === Role.PATIENT &&
+      item.RoleUuid === ROLE_UUIDS.PATIENT &&
       item.Status === BaseStatus.Active,
   );
   return Boolean(

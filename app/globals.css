@@ -158,3 +158,8 @@
 .shadow-xl {
   box-shadow: 0 8px 24px rgb(20 63 91 / 0.1);
 }
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+  display: none;
+}
