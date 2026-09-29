@@ -7,7 +7,7 @@ public class PatientProfile
 {
     [Key]
     public Guid Uuid { get; set; }
-    public Guid AccountUuid { get; set; }
+    public Guid? AccountUuid { get; set; }
     public string Avatar { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public Gender Gender { get; set; } = Gender.Other;

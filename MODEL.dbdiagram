@@ -1,0 +1,537 @@
+
+Enum BaseStatus {
+  Active
+  InActive
+}
+
+Enum Gender {
+  Other
+  Male
+  Female
+}
+
+Table Account {
+  Uuid Guid
+  Phone string
+  Password string
+  RoleUuid Guid
+  
+  Status BaseStatus
+
+  HospitalUuid Guid [null]
+
+  CreatedAt Date
+  UpdatedAt Date 
+  DeletedAt Date
+}
+
+Ref: Account.RoleUuid > Role.Uuid
+
+Table PatientProfile {
+  Uuid Guid
+  Avatar string
+  Name string
+  Gender Gender
+  Birthdate Date
+  MedicalCode string
+  Email string
+
+  AccountUuid Guid
+}
+
+Ref: PatientProfile.AccountUuid - Account.Uuid
+
+Table DoctorProfile {
+  Uuid Guid
+  Avatar string
+  Slug string
+  Name string
+
+  Price int
+  DepartmentDisplay string
+
+  Introduction text // markdown
+  Expertise text // markdown
+  Specialty string // Chuyên môn ngắn
+  Workplace string // Nơi làm việc
+
+  IsFeatured bool
+
+  AccountUuid Guid
+  HospitalUuid Guid
+}
+
+Ref: DoctorProfile.AccountUuid - Account.Uuid
+Ref: DoctorProfile.HospitalUuid > Hospital.Uuid
+
+Table DoctorDepartment {
+  Uuid Guid
+  DoctorUuid Guid
+  DepartmentUuid Guid
+}
+
+Ref: DoctorDepartment.DoctorUuid > DoctorProfile.Uuid
+Ref: DoctorDepartment.DepartmentUuid > Department.Uuid
+
+Table Hospital {
+  Uuid Guid
+  Image string
+  MapUrl string
+  Slug string
+  Name string
+  Address string
+  NumberOfRoom int
+
+  Description string // Markdown
+  DetailService string // // Markdown
+  WorkingHour string
+
+  Status BaseStatus
+
+  CreatedAt Date
+  UpdatedAt Date 
+  DeletedAt Date
+}
+
+Ref: Account.HospitalUuid > Hospital.Uuid
+
+Enum RoomStatus {
+  Available
+  Occupied
+  Maintenance
+}
+
+Table Room {
+  Uuid Guid
+  Name string
+  Status RoomStatus
+
+  HospitalUuid Guid
+
+  CreatedAt Date
+  UpdatedAt Date 
+  DeletedAt Date
+}
+
+Ref: Room.HospitalUuid > Hospital.Uuid
+
+Table Department {
+  Uuid Guid
+  Icon string
+  Slug string
+  Name string
+  Description string // Markdown
+
+  Status BaseStatus
+  
+  CreatedAt Date
+  UpdatedAt Date 
+  DeletedAt Date
+}
+
+
+Table HospitalDepartment {
+  Uuid Guid
+  HospitalUuid Guid
+  DepartmentUuid Guid
+}
+
+Ref: HospitalDepartment.HospitalUuid > Hospital.Uuid
+Ref: HospitalDepartment.DepartmentUuid > Department.Uuid
+
+Table MedicalService {
+  Uuid Guid
+  Image string
+  Slug string
+  Name string
+
+  Price int
+
+  Description string
+  DetailService string
+  WorkingHour string
+
+  Status BaseStatus
+
+  IsInsured bool
+  InsuranceCap int
+
+  IsFeatured bool
+  
+  CreatedAt Date
+  UpdatedAt Date 
+  DeletedAt Date
+}
+
+Table HospitalMedicalService {
+  Uuid Guid
+  HospitalUuid Guid
+  MedicalServiceUuid Guid
+}
+
+Ref: HospitalMedicalService.HospitalUuid > Hospital.Uuid
+Ref: HospitalMedicalService.MedicalServiceUuid > MedicalService.Uuid
+
+// Review
+Table ReviewHospital {
+  Uuid Guid
+  Content string
+  NumberOfStar int
+
+  PatientUuid Guid
+  HospitalUuid Guid
+
+  Status BaseStatus
+  IsViewed bool
+
+  CreatedAt Date
+}
+
+Ref: ReviewHospital.PatientUuid > PatientProfile.Uuid
+Ref: ReviewHospital.HospitalUuid > Hospital.Uuid
+
+Table ReviewDoctor {
+  Uuid Guid
+  Content string
+  NumberOfStar int
+
+  PatientUuid Guid
+  DoctorUuid Guid
+
+  Status BaseStatus
+  IsViewed bool
+
+  CreatedAt Date
+}
+
+Ref: ReviewDoctor.PatientUuid > PatientProfile.Uuid
+Ref: ReviewDoctor.DoctorUuid > DoctorProfile.Uuid
+
+Table ReviewMedicalService {
+  Uuid Guid
+  Content string
+  NumberOfStar int
+
+  PatientUuid Guid
+  MedicalServiceUuid Guid
+
+  Status BaseStatus
+  IsViewed bool
+
+  CreatedAt Date
+}
+
+Ref: ReviewMedicalService.PatientUuid > PatientProfile.Uuid
+Ref: ReviewMedicalService.MedicalServiceUuid > MedicalService.Uuid
+
+Enum MedicineUnit {
+  Other
+  Tablet
+  Bottle
+  Box
+  Tube
+  Sachet
+}
+
+Table Medicine {
+  Uuid Guid
+  Image string
+  Name string
+  Description string
+  Price int
+
+  Unit MedicineUnit
+  Status BaseStatus
+
+  IsInsured bool
+  InsuranceCap float
+
+  CreatedAt Date
+  UpdatedAt Date 
+  DeletedAt Date
+}
+
+Table MedicineInventory {
+  Uuid Guid [pk]
+  HospitalUuid Guid
+  MedicineUuid Guid
+  Quantity int
+  MinimumQuantity int
+
+  CreatedAt Date
+  UpdatedAt Date
+  DeletedAt Date
+}
+
+Ref: MedicineInventory.HospitalUuid > Hospital.Uuid
+Ref: MedicineInventory.MedicineUuid > Medicine.Uuid
+
+Enum ProviderStatus {
+  Active
+  InActive
+}
+
+Table Provider {
+  Uuid Guid
+  Name string
+  Address string
+  Hotline string
+
+  Status ProviderStatus
+
+  CreatedAt Date
+  UpdatedAt Date 
+  DeletedAt Date
+}
+
+Enum ImportTicketStatus {
+  Pending
+  Confirmed
+  Cancelled
+}
+
+Table ImportTicket {
+  Uuid Guid [pk]
+  HospitalUuid Guid
+  AccountUuid Guid
+  ProviderUuid Guid
+  Note string
+  
+  Status ImportTicketStatus
+  
+  CreatedAt Date
+  UpdatedAt Date
+  DeletedAt Date
+}
+
+
+Table ImportTicketDetail {
+  Uuid Guid
+  ImportTicketUuid Guid
+  MedicineUuid Guid
+  Quantity int
+  Price int
+}
+
+Enum ExportTicketStatus {
+  Pending
+  Confirmed
+  Cancelled
+}
+
+Table ExportTicket {
+  Uuid Guid [pk]
+  HospitalUuid Guid
+  AccountUuid Guid
+  Note string
+
+  Status ExportTicketStatus
+
+  CreatedAt Date
+  UpdatedAt Date
+  DeletedAt Date
+}
+
+Table ExportTicketDetail {
+  Uuid Guid [pk]
+  ExportTicketUuid Guid
+  MedicineUuid Guid
+  Quantity int
+  Price int
+}
+
+Enum PrescriptionStatus {
+  Unpaid
+  Paid
+  Cancelled
+}
+
+Table Prescription {
+  Uuid Guid
+  PatientProfileUuid Guid
+  DoctorProfileUuid Guid
+  HospitalUuid Guid
+
+  Status PrescriptionStatus
+  Note string
+
+  AppointmentUuid Guid [null]
+
+  CreatedAt Date
+  UpdatedAt Date
+  DeletedAt Date
+}
+
+Ref: Prescription.AppointmentUuid > Appointment.Uuid
+
+Table PrescriptionDetail {
+  Uuid Guid
+  PrescriptionUuid Guid
+  MedicineUuid Guid
+  Quantity int
+  QuantityPerDose int
+  DosesPerDay int
+  Duration int
+  Price int
+  IsExternal bool
+  Note string
+}
+
+Ref: ImportTicket.HospitalUuid > Hospital.Uuid
+Ref: ImportTicket.AccountUuid > Account.Uuid
+Ref: ImportTicket.ProviderUuid > Provider.Uuid
+
+Ref: ImportTicketDetail.ImportTicketUuid > ImportTicket.Uuid
+Ref: ImportTicketDetail.MedicineUuid > Medicine.Uuid
+
+Ref: ExportTicket.HospitalUuid > Hospital.Uuid
+Ref: ExportTicket.AccountUuid > Account.Uuid
+
+Ref: ExportTicketDetail.ExportTicketUuid > ExportTicket.Uuid
+Ref: ExportTicketDetail.MedicineUuid > Medicine.Uuid
+
+Ref: Prescription.HospitalUuid > Hospital.Uuid
+Ref: Prescription.PatientProfileUuid > PatientProfile.Uuid
+Ref: Prescription.DoctorProfileUuid > DoctorProfile.Uuid
+
+Ref: PrescriptionDetail.PrescriptionUuid > Prescription.Uuid
+Ref: PrescriptionDetail.MedicineUuid > Medicine.Uuid
+
+Enum AppointmentStatus {
+  Pending
+  Approved
+  Done
+  Cancelled
+}
+
+Enum AppointmentType {
+  Doctor
+  Hospital
+  Service
+}
+
+Table Appointment {
+  Uuid Guid
+  PatientName string
+  Gender Gender
+  MedicalCode string
+  Note string
+  TimeSlot Guid
+  Type AppointmentType
+  Status AppointmentStatus
+
+  PatientUuid Guid [not null]
+  HospitalUuid Guid [not null]
+  DoctorUuid Guid
+  MedicalServiceUuid Guid
+  RoomUuid Guid
+
+  DoctorNote string
+  TotalPrice int
+  IsPaid bool
+
+  CreatedAt Date
+  UpdatedAt Date
+  DeletedAt Date
+}
+
+Ref: Appointment.PatientUuid > PatientProfile.Uuid
+Ref: Appointment.HospitalUuid > Hospital.Uuid
+Ref: Appointment.DoctorUuid > DoctorProfile.Uuid
+Ref: Appointment.MedicalServiceUuid > MedicalService.Uuid
+Ref: Appointment.RoomUuid > Room.Uuid
+Ref: Appointment.TimeSlot > TimeWorking.Uuid
+
+Table AppointmentMedicalService {
+  Uuid Guid
+  AppointmentUuid Guid
+  MedicalService Guid
+  Price int
+}
+
+Ref: AppointmentMedicalService.AppointmentUuid > Appointment.Uuid
+Ref: AppointmentMedicalService.MedicalService > MedicalService.Uuid
+
+
+Table MomoLog {
+  Uuid Guid
+}
+
+Table AuditLog {
+  Uuid Guid
+}
+
+Table TimeWorking {
+  Uuid Guid
+  DayOfWeek int
+  StartTime Time
+  EndTime Time
+  Status BaseStatus
+
+  CreatedAt Date
+  UpdatedAt Date
+  DeletedAt Date
+}
+
+Table Role {
+  Uuid Guid
+  Name string
+  Description string
+  IsDoctor bool
+  Status BaseStatus
+
+  CreatedAt Date
+  UpdatedAt Date
+  DeletedAt Date
+}
+
+Enum Action {
+  Read
+  Create
+  Update
+  Delete
+}
+
+Table Permission {
+  Uuid Guid
+  Icon string
+  Name string
+  Description string
+}
+
+Table RolePermission {
+  Uuid Guid
+  RoleUuid Guid
+  Permission Guid
+  Action Action
+}
+
+Ref: RolePermission.RoleUuid > Role.Uuid
+Ref: RolePermission.RoleUuid > Permission.Uuid
+
+Table DoctorWorking {
+  Uuid Guid
+  DoctorUuid Guid
+  WorkingUuid Guid
+}
+
+Ref: DoctorWorking.DoctorUuid > DoctorProfile.Uuid
+Ref: DoctorWorking.WorkingUuid > TimeWorking.Uuid
+
+Table HospitalWorking {
+  Uuid Guid
+  HospitalUuid Guid
+  WorkingUuid Guid
+}
+
+Ref: HospitalWorking.HospitalUuid > Hospital.Uuid
+Ref: HospitalWorking.WorkingUuid > TimeWorking.Uuid
+
+Table ServiceWorking {
+  Uuid Guid
+  ServiceUuid Guid
+  WorkingUuid Guid
+}
+
+Ref: ServiceWorking.ServiceUuid > MedicalService.Uuid
+Ref: ServiceWorking.WorkingUuid > TimeWorking.Uuid

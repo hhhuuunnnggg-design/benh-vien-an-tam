@@ -3,13 +3,13 @@ using api.Model.Enum;
 
 namespace api.Model;
 
-public class Account : ISoftDeletable
+public class Account 
 {
     [Key]
     public Guid Uuid { get; set; }
     public string Phone { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
-    public Guid RoleUuid { get; set; }
+    public Guid? RoleUuid { get; set; }
     public BaseStatus Status { get; set; } = BaseStatus.Active;
 
     public Guid? HospitalUuid { get; set; }

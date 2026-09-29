@@ -6,8 +6,8 @@ public class PrescriptionDetail
 {
     [Key]
     public Guid Uuid { get; set; }
-    public Guid PrescriptionUuid { get; set; }
-    public Guid MedicineUuid { get; set; }
+    public Guid? PrescriptionUuid { get; set; }
+    public Guid? MedicineUuid { get; set; }
     public int Quantity { get; set; }
     public int QuantityPerDose { get; set; }
     public int DosesPerDay { get; set; }

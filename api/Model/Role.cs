@@ -3,7 +3,7 @@ using api.Model.Enum;
 
 namespace api.Model;
 
-public class Role : ISoftDeletable
+public class Role
 {
     [Key]
     public Guid Uuid { get; set; }
