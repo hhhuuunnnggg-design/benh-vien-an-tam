@@ -501,7 +501,7 @@ function DoctorSummary({
     <aside className="self-start overflow-hidden border border-t-4 border-t-primary bg-card lg:sticky lg:top-32">
       <div className="relative aspect-[16/9] bg-muted">
         <Image
-          src={doctor.Image}
+          src={doctor.Avatar}
           alt={`Bác sĩ ${doctor.Name}`}
           fill
           sizes="(min-width: 1024px) 36vw, 100vw"

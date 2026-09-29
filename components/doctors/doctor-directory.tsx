@@ -261,7 +261,7 @@ function DoctorDirectoryCard({ doctor }: { doctor: DoctorProfile }) {
           className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[linear-gradient(145deg,var(--muted),var(--secondary))]"
         >
           <Image
-            src={doctor.Image}
+            src={doctor.Avatar}
             alt={`Bác sĩ ${doctor.Name}`}
             fill
             sizes="144px"

@@ -53,7 +53,7 @@ export function DoctorDetailView({ detail }: { detail: DoctorDetail }) {
         <div className="mt-6 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]">
           <div className="relative min-h-80 overflow-hidden rounded-2xl border bg-[linear-gradient(145deg,var(--muted),var(--secondary))] sm:min-h-[30rem]">
             <DetailImage
-              src={doctor.Image}
+              src={doctor.Avatar}
               fallbackSrc="/images/doctor-placeholder.svg"
               alt={`Bác sĩ ${doctor.Name}`}
             />

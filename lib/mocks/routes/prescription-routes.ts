@@ -17,7 +17,7 @@ import {
   AppointmentType,
   BaseStatus,
   PrescriptionStatus,
-  Role,
+  ROLE_UUIDS,
   type Prescription,
 } from "@/types/models";
 import type {
@@ -169,7 +169,7 @@ function getCurrentPatient(headers: unknown) {
   const account = mockAccounts.find(
     (item) =>
       item.Uuid === accountUuid &&
-      item.Role === Role.PATIENT &&
+      item.RoleUuid === ROLE_UUIDS.PATIENT &&
       item.Status === BaseStatus.Active,
   );
   const profile = mockPatientProfiles.find(

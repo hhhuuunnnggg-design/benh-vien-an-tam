@@ -14,7 +14,7 @@ public class Momo
         this._setting = options.Value;
     }
 
-    public void CreateOrder(string uuid, string content, int value)
+    public void CreateOrder(Guid uuid, string content, int value)
     {
         
     }

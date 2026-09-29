@@ -9,7 +9,7 @@ import type {
   LoginRequest,
   RegisterPatientRequest,
 } from "@/types/auth";
-import { BaseStatus, Role } from "@/types/models";
+import { BaseStatus, ROLE_UUIDS } from "@/types/models";
 import type { PatientProfile } from "@/types/models";
 
 const sessionStorageKey = "an-tam-y-te.patient-session";
@@ -51,7 +51,7 @@ function hydrateSession(value: string): AuthSession | null {
     const session = JSON.parse(value) as AuthSession;
 
     if (
-      session.Account.Role !== Role.PATIENT ||
+      session.Account.RoleUuid !== ROLE_UUIDS.PATIENT ||
       session.Account.Status !== BaseStatus.Active ||
       !session.Account.Uuid ||
       !session.PatientProfile?.Uuid

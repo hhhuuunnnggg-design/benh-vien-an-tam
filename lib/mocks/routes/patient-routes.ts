@@ -3,7 +3,7 @@ import type AxiosMockAdapter from "axios-mock-adapter";
 import { mockAccounts } from "@/data/mocks/accounts";
 import { mockPatientProfiles } from "@/data/mocks/patient-profiles";
 import { validatePatientProfile } from "@/lib/patient/validation";
-import { BaseStatus, Gender, Role } from "@/types/models";
+import { BaseStatus, Gender, ROLE_UUIDS } from "@/types/models";
 import type { UpdatePatientProfileRequest } from "@/types/patient";
 
 const allowedUpdateFields = new Set([
@@ -65,7 +65,7 @@ function getCurrentPatient(headers: unknown) {
   const account = mockAccounts.find(
     (item) =>
       item.Uuid === accountUuid &&
-      item.Role === Role.PATIENT &&
+      item.RoleUuid === ROLE_UUIDS.PATIENT &&
       item.Status === BaseStatus.Active,
   );
   const profile = mockPatientProfiles.find(
