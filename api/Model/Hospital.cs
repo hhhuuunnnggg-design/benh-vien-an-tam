@@ -3,7 +3,7 @@ using api.Model.Enum;
 
 namespace api.Model;
 
-public class Hospital : ISoftDeletable
+public class Hospital 
 {
     [Key]
     public Guid Uuid { get; set; }

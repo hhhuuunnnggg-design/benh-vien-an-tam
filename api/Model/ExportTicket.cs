@@ -3,12 +3,12 @@ using api.Model.Enum;
 
 namespace api.Model;
 
-public class ExportTicket : ISoftDeletable
+public class ExportTicket 
 {
     [Key]
     public Guid Uuid { get; set; }
-    public Guid HospitalUuid { get; set; }
-    public Guid AccountUuid { get; set; }
+    public Guid? HospitalUuid { get; set; }
+    public Guid? AccountUuid { get; set; }
     public string Note { get; set; } = string.Empty;
     public ExportTicketStatus Status { get; set; } = ExportTicketStatus.Pending;
     public DateTime CreatedAt { get; set; }

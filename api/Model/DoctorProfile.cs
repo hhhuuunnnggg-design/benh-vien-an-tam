@@ -6,7 +6,7 @@ public class DoctorProfile
 {
     [Key]
     public Guid Uuid { get; set; }
-    public Guid AccountUuid { get; set; }
+    public Guid? AccountUuid { get; set; }
     public string Avatar { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -18,5 +18,5 @@ public class DoctorProfile
     public string Workplace { get; set; } = string.Empty;
     public bool IsFeatured { get; set; }
 
-    public Guid HospitalUuid { get; set; }
+    public Guid? HospitalUuid { get; set; }
 }

@@ -3,7 +3,7 @@ using api.Model.Enum;
 
 namespace api.Model;
 
-public class TimeWorking : ISoftDeletable
+public class TimeWorking 
 {
     [Key]
     public Guid Uuid { get; set; }
